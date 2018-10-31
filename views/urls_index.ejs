@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>TinyApp</title>
+  </head>
+  <body>
+
+    <header>
+ <% include ./partials/_header.ejs %>
+    </header>
+
+      <ul>
+        <% for (shortURL in urls) { %>
+          <li> <%= shortURL %> &#8594; <%= urls[shortURL] %>  <a href="urls/<%= shortURL%>">Edit</a>
+
+          <form method="POST" action="/urls/<%= shortURL %>/delete">
+
+            <input type="submit" value="Delete"></form></li>
+         <!--  <form method="POST" action="/urls/<%= shortURL %>">
+          <input type="submit" value="Update"></form> -->
+        <% } %>
+
+    <p><a href="/urls/new">Shorten a new URL</a> </p>
+      </ul>
+  </body>
+</html>
