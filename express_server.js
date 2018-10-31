@@ -93,18 +93,41 @@ app.get("/register", (req, res)=>{
   res.render("urls_register",templateVars);
   //remove the templeVars later
 })
+
 app.post("/register", (req, res)=>{
+  if (!req.body.username || !req.body.password) {
+    res.sendStatus(400);
+    } else
+      {for (user in users) {
+        // console.log(users[user].email)
+        if (req.body.username !== user.email) {
+          console.log(user)
+          console.log(req.body.username)
+          console.log(users[user].email)
+          let newID = generateRamdomString();
+          users[newID] = {id: newID,
+                          email: req.body.username,
+                          password: req.body.password};
+          res.cookie("user_id", users[newID].id);
+          res.redirect('/urls');
+        } else {
+          res.sendStatus(400);
+        }
+
+    }
+  }
 
 });
-
 const users = {
   "userRandomID": {
     id: "userRandomID",
+    // email: "wzhao.eric@gmail.com",
     email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
  "user2RandomID": {
     id: "user2RandomID",
+    // email: "wzhao.eric@gmail.com",
     email: "user2@example.com",
     password: "dishwasher-funk"
   }

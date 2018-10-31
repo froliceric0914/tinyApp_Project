@@ -4,11 +4,8 @@
     <title>TinyApp</title>
   </head>
   <body>
-
-    <header>
- <% include ./partials/_header.ejs %>
-    </header>
-
+    <h1>Tiny App</h1>
+    <p>add header later</p>
       <ul>
         <% for (shortURL in urls) { %>
           <li> <%= shortURL %> &#8594; <%= urls[shortURL] %>  <a href="urls/<%= shortURL%>">Edit</a>
@@ -20,7 +17,9 @@
           <input type="submit" value="Update"></form> -->
         <% } %>
 
-    <p><a href="/urls/new">Shorten a new URL</a> </p>
+        <a href="/register">Registe here</a> </p></footer>
+
+        <p><a href="/urls/new">Shorten a new URL</a> </p>
       </ul>
   </body>
 </html>
