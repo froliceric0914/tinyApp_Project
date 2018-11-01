@@ -8,6 +8,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use(cookieParser())
 
+const bcrypt = require('bcrypt');
+const password = "purple-monkey-dinosaur"; // you will probably this from req.params
+const hashedPassword = bcrypt.hashSync(password, 10);
+
 /*
 GET /
 
@@ -48,14 +52,16 @@ function getUserEmail(user_id) {
 // which returns the subset of the URL database that belongs to the user with ID id
 
 var urlsForUser = function (someUser) {
+  let filtered = {}
   for (shortURL in urlDatabase){
-    if (someUser === urlDatabase[shortURL].userID){
-      return urlDatabase[shortURL];
+    if (someUser == urlDatabase[shortURL].userID){
+      filtered[shortURL] = urlDatabase[shortURL];
       //only filter the only one object
     } else {
-      console.log("not found ")
+      console.log("not found")
     }
   }
+  return filtered;
 }
 
 let result = urlsForUser("user_id1");
@@ -79,10 +85,8 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (req.cookies['user_id']) {
-    let fliteredDatabase = urlsForUser("user_id2");
-    // let fliteredDatabase = urlsForUser(req.cookies['user_id']);
-    console.log(urlsForUser("user_id2"))
-    let templateVars = {urls: filteredDatabase,
+    let fliteredDatabase = urlsForUser(req.cookies['user_id']);
+    let templateVars = {urls: fliteredDatabase,
                        // shortURL: urlDatabase[]
                        username: req.cookies["user_id"],
                        users: users};
@@ -155,7 +159,7 @@ app.post("/urls/:id", (req,res)=>{
 app.post("/urls/:id/delete", (req, res)=> {
   if(req.cookies['user_id'] === urlDatabase[req.params.id].userID) {
     delete urlDatabase[req.params.id];
-    res.redirect('/urls').send("delete successfully");
+    res.redirect('/urls');
   } else {
     res.status(401).send("You don't have the access to this URL")
   }
@@ -164,7 +168,7 @@ app.post("/urls/:id/delete", (req, res)=> {
 
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect('/longURL');
+  res.redirect(`${longURL}`);
   //the purposr og using this endpoint? shorteningURL part II
 });
 
@@ -213,7 +217,6 @@ app.get("/register", (req, res)=>{
                       username: req.cookies["user_id"],
                       users: users}
   res.render("urls_register",templateVars);
-  //remove the templeVars later
 })
 
 app.post("/register", (req, res)=>{
