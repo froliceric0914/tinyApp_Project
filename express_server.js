@@ -14,6 +14,21 @@ var urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+const users = {
+  "userRandomID": {
+    id: "user1RandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+}
+
+const getKey = (obj,val) => Object.keys(obj).find(key => obj[key] === val);
+
 
 function generateRamdomString () {
   var text = "";
@@ -33,7 +48,9 @@ app.get("/", (req, res) => {
 // });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  let templateVars = { urls: urlDatabase,
+                       username: req.cookies["user_id"],
+                       users: users};
   res.render("urls_index", templateVars);
 });
 
@@ -54,7 +71,8 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req,res)=>{
   let templateVars = {shortURL: req.params.id,
                       longURL: urlDatabase[req.params.id],
-                      username: req.cookies["username"]}
+                      username: req.cookies["user_id"],
+                      users: users}
   res.render("urls_show_updateURL", templateVars);
 });
 
@@ -76,20 +94,52 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+
+app.get("/login", (req, res)=>{
+  let templateVars = {shortURL: req.params.id,
+                      longURL: urlDatabase[req.params.id],
+                      username: req.cookies["user_id"],
+                      users: users}
+  res.render("urls_login", templateVars);
+});
+
 app.post("/login", (req, res) =>{
-  res.cookie("username", req.body.username);
-  // console.log(req.body.username);
-  res.redirect('/urls')
+  if (!req.body.username || !req.body.password) {
+    res.sendStatus(403);
+  }
+  else {
+    let verifyID = false;
+    for (user in users) {
+      if (users[user].email === req.body.username
+        && users[user].password === req.body.password){
+         console.log("Wrong credentials")
+        //console.log("password:", users[user].password)
+        verifyID = true;
+        break;
+      }
+    }
+    if (verifyID){
+        // need to find the userID according to the email
+        res.cookie("user_id", req.body.username);
+        res.redirect('/urls');
+    } else {
+      res.sendStatus(403);
+    }
+  }
+  //need to react differently when name wrong or password wrong
 })
 
 app.post("/logout", (req, res)=>{
-
-})
+  res.clearCookie("user_id");
+  console.log(users)
+  res.redirect('/urls');
+});
 
 app.get("/register", (req, res)=>{
    let templateVars = {shortURL: req.params.id,
                       longURL: urlDatabase[req.params.id],
-                      username: req.cookies["username"]}
+                      username: req.cookies["user_id"],
+                      users: users}
   res.render("urls_register",templateVars);
   //remove the templeVars later
 })
@@ -97,41 +147,27 @@ app.get("/register", (req, res)=>{
 app.post("/register", (req, res)=>{
   if (!req.body.username || !req.body.password) {
     res.sendStatus(400);
-    } else
-      {for (user in users) {
-        // console.log(users[user].email)
-        if (req.body.username !== user.email) {
-          console.log(user)
-          console.log(req.body.username)
-          console.log(users[user].email)
-          let newID = generateRamdomString();
-          users[newID] = {id: newID,
-                          email: req.body.username,
-                          password: req.body.password};
-          res.cookie("user_id", users[newID].id);
-          res.redirect('/urls');
-        } else {
-          res.sendStatus(400);
-        }
-
+  } else {
+    let isUnique = true; //declare a marker, to see whether the any record matches the input
+    for (user in users) {
+      if (users[user].email === req.body.username) {
+        isUnique = false;
+        break; // continue the iteration
+      }
+    }//avoid to send the res.redirect inside the interation;
+    if(isUnique) {
+      let newID = generateRamdomString();
+        users[newID] = {id: newID,
+                        email: req.body.username,
+                        password: req.body.password};
+        res.cookie("user_id", req.body.username);
+        res.redirect('/urls');
+    } else {
+      res.sendStatus(400);
     }
   }
-
 });
-const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    // email: "wzhao.eric@gmail.com",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
- "user2RandomID": {
-    id: "user2RandomID",
-    // email: "wzhao.eric@gmail.com",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-}
+
 
 
 app.listen(PORT, ()=>{
