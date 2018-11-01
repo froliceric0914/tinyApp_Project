@@ -8,12 +8,23 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use(cookieParser())
 
+/*
+GET /
 
+if user is logged in:
+(Minor) redirect to /urls
+if user is not logged in:
+(Minor) redirect to /login
+
+Cookie   set the expired date
+
+*/
 
 var urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+    "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID1: "user_id1"},
+    "9sm5xK": {longURL: "http://www.google.com", userID2: "user_id2"},
 };
+
 const users = {
   "userRandomID": {
     id: "user1RandomID",
@@ -27,7 +38,13 @@ const users = {
   }
 }
 
-const getKey = (obj,val) => Object.keys(obj).find(key => obj[key] === val);
+function getKeyByValue(value) {
+  return Object.keys(object).find(key => object[key] === value);
+}
+
+function getUserEmail(user_id) {
+  return users[user_id].email;
+}
 
 
 function generateRamdomString () {
@@ -51,33 +68,59 @@ app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase,
                        username: req.cookies["user_id"],
                        users: users};
+    //display the useremail once login
+    // console.log(users)
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  let newID = generateRamdomString();
-  urlDatabase[newID] = req.body.longURL;
-  let shortURL = newID;
-  // console.log(urlDatabase)
-  res.redirect(`/urls/${shortURL}`);
+  var shorteningURL = generateRamdomString();
+  // urlDatabase[newID] = req.body.longURL;
+  urlDatabase[shorteningURL] = {longURL: req.body.longURL,
+                                userID: req.cookies["user_id"]}
+  // userID = {};
+  // userID[shortURL] = req.body.longURL;
+
+
+console.log(urlDatabase);
+// console.log(shortURL);
+  // uerID: {shortURL: longURL}
+  //urlDatabase = {"userID": {shortURL: longURL} }
+  res.redirect('/urls');
+  // res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  if (req.cookies["user_id"]) {
+      let templateVars = {longURL: urlDatabase[req.params.id],
+                          username: req.cookies["user_id"],
+                          users: users}
+  console.log()
+  res.render("urls_new", templateVars);
+  } else {
+    res.redirect(401, '/login');
+  }
 });
 
 
 
 app.get("/urls/:id", (req,res)=>{
+  //if a URL for the given ID does not exist:
+//(Minor) returns HTML with a relevant error message
+//if user is not logged in:
+// returns HTML with a relevant error message
+// if user is logged it but does not own the URL with the given ID:
+// returns HTML with a relevant error message
   let templateVars = {shortURL: req.params.id,
-                      longURL: urlDatabase[req.params.id],
+                      longURL: urlDatabase[req.params.id].longURL,
                       username: req.cookies["user_id"],
                       users: users}
+                      console.log()
   res.render("urls_show_updateURL", templateVars);
 });
 
 app.post("/urls/:id", (req,res)=>{
-  urlDatabase[req.params.id] = req.body.longURL;
+  urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect('/urls')
 
 })
@@ -90,8 +133,9 @@ app.post("/urls/:id/delete", (req, res)=> {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  let longURL = urlDatabase[req.params.shortURL];
+  let longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
+  //the purposr og using this endpoint? shorteningURL part II
 });
 
 
@@ -105,25 +149,24 @@ app.get("/login", (req, res)=>{
 
 app.post("/login", (req, res) =>{
   if (!req.body.username || !req.body.password) {
-    res.sendStatus(403);
+    res.status(403).send("Please input your username/password");
   }
   else {
     let verifyID = false;
     for (user in users) {
       if (users[user].email === req.body.username
         && users[user].password === req.body.password){
-         console.log("Wrong credentials")
-        //console.log("password:", users[user].password)
         verifyID = true;
+        var userID = users[user].id; //try to replace the var later
         break;
       }
     }
     if (verifyID){
         // need to find the userID according to the email
-        res.cookie("user_id", req.body.username);
+        res.cookie("user_id", userID);
         res.redirect('/urls');
     } else {
-      res.sendStatus(403);
+      res.redirect(403, '/register');
     }
   }
   //need to react differently when name wrong or password wrong
@@ -152,7 +195,7 @@ app.post("/register", (req, res)=>{
     for (user in users) {
       if (users[user].email === req.body.username) {
         isUnique = false;
-        break; // continue the iteration
+        break; // break from the iteration and continue to do the next funtionality within the scoope
       }
     }//avoid to send the res.redirect inside the interation;
     if(isUnique) {
@@ -160,10 +203,10 @@ app.post("/register", (req, res)=>{
         users[newID] = {id: newID,
                         email: req.body.username,
                         password: req.body.password};
-        res.cookie("user_id", req.body.username);
+        res.cookie("user_id", newID);
         res.redirect('/urls');
     } else {
-      res.sendStatus(400);
+      res.status(400).send('User already exists, please directly log in');
     }
   }
 });
