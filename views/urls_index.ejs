@@ -11,7 +11,7 @@
       <ul>
         <% for (shortURL in urls) { %>
           <li> <%= shortURL %> &#8594; <%= urls[shortURL].longURL %>
-            <a href="urls/<%= shortURL%>">Edit</a>
+            <a href="/urls/<%= shortURL%>">Edit</a>
             <form method="POST" action="/urls/<%= shortURL %>/delete">
             <input type="submit" value="Delete"></form></li>
         <% } %>

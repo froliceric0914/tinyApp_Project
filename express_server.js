@@ -21,8 +21,8 @@ Cookie   set the expired date
 */
 
 var urlDatabase = {
-    "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID1: "user_id1"},
-    "9sm5xK": {longURL: "http://www.google.com", userID2: "user_id2"},
+    "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "user_id1"},
+    "9sm5xK": {longURL: "http://www.google.com", userID: "user_id2"},
 };
 
 const users = {
@@ -38,14 +38,27 @@ const users = {
   }
 }
 
-function getKeyByValue(value) {
-  return Object.keys(object).find(key => object[key] === value);
-}
-
+/* find the email by the user_id
 function getUserEmail(user_id) {
   return users[user_id].email;
 }
+*/
 
+// comparing the userID with the logged-in user's ID.
+// which returns the subset of the URL database that belongs to the user with ID id
+
+var urlsForUser = function (someUser) {
+  for (shortURL in urlDatabase){
+    if (someUser === urlDatabase[shortURL].userID){
+      return urlDatabase[shortURL];
+      //only filter the only one object
+    } else {
+      console.log("not found ")
+    }
+  }
+}
+
+let result = urlsForUser("user_id1");
 
 function generateRamdomString () {
   var text = "";
@@ -65,12 +78,27 @@ app.get("/", (req, res) => {
 // });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase,
+  if (req.cookies['user_id']) {
+    let fliteredDatabase = urlsForUser("user_id2");
+    // let fliteredDatabase = urlsForUser(req.cookies['user_id']);
+    console.log(urlsForUser("user_id2"))
+    let templateVars = {urls: filteredDatabase,
+                       // shortURL: urlDatabase[]
                        username: req.cookies["user_id"],
                        users: users};
+    res.render("urls_index", templateVars);
+  } else {
+    res.redirect(401, "/login");
+  }
+
+
+  // let templateVars = { urls: urlDatabase,
+  //                      // shortURL: urlDatabase[]
+  //                      username: req.cookies["user_id"],
+  //                      users: users};
     //display the useremail once login
     // console.log(users)
-  res.render("urls_index", templateVars);
+
 });
 
 app.post("/urls", (req, res) => {
@@ -80,9 +108,6 @@ app.post("/urls", (req, res) => {
                                 userID: req.cookies["user_id"]}
   // userID = {};
   // userID[shortURL] = req.body.longURL;
-
-
-console.log(urlDatabase);
 // console.log(shortURL);
   // uerID: {shortURL: longURL}
   //urlDatabase = {"userID": {shortURL: longURL} }
@@ -95,7 +120,6 @@ app.get("/urls/new", (req, res) => {
       let templateVars = {longURL: urlDatabase[req.params.id],
                           username: req.cookies["user_id"],
                           users: users}
-  console.log()
   res.render("urls_new", templateVars);
   } else {
     res.redirect(401, '/login');
@@ -111,12 +135,15 @@ app.get("/urls/:id", (req,res)=>{
 // returns HTML with a relevant error message
 // if user is logged it but does not own the URL with the given ID:
 // returns HTML with a relevant error message
-  let templateVars = {shortURL: req.params.id,
-                      longURL: urlDatabase[req.params.id].longURL,
-                      username: req.cookies["user_id"],
-                      users: users}
-                      console.log()
-  res.render("urls_show_updateURL", templateVars);
+let templateVars = {shortURL: req.params.id,
+                    longURL: urlDatabase[req.params.id].longURL,
+                    username: req.cookies["user_id"],
+                    users: users}
+  if(req.cookies['user_id'] === urlDatabase[req.params.id].userID) {
+    res.render("urls_show_updateURL", templateVars);
+  } else {
+    res.status(401).send("You don't have the access to this URL")
+  }
 });
 
 app.post("/urls/:id", (req,res)=>{
@@ -125,16 +152,19 @@ app.post("/urls/:id", (req,res)=>{
 
 })
 
-
 app.post("/urls/:id/delete", (req, res)=> {
-  delete urlDatabase[req.params.id];
-  // console.log(urlDatabase)
-  res.redirect('/urls');
+  if(req.cookies['user_id'] === urlDatabase[req.params.id].userID) {
+    delete urlDatabase[req.params.id];
+    res.redirect('/urls').send("delete successfully");
+  } else {
+    res.status(401).send("You don't have the access to this URL")
+  }
+
 });
 
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  res.redirect('/longURL');
   //the purposr og using this endpoint? shorteningURL part II
 });
 
@@ -174,7 +204,6 @@ app.post("/login", (req, res) =>{
 
 app.post("/logout", (req, res)=>{
   res.clearCookie("user_id");
-  console.log(users)
   res.redirect('/urls');
 });
 
