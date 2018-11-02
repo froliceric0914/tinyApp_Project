@@ -3,8 +3,7 @@
   <head>
     <title>TinyApp</title>
   </head>
-  <body>
-
+  <header> <% include ./partials/_header.ejs %> </header>
     <% if (!username){ %>
        <form method="POST" action="/login">
            Username: <br><input type="email" name="username"><br />

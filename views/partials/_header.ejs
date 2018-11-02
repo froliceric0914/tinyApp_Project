@@ -4,20 +4,17 @@
 <div class="container-fluid">
 
     <div class="navbar-header">
-        <ul class="nav navbar-nav">
-            <p><a href="/urls">Home</a></p>
-
-
-
+      <ul class="nav navbar-nav">
+        <p><a href="/urls">Home</a></p>
           <% if (username){ %>
-               <p>Welcome, user <%= username%>!</p>
-                <form method="POST" action="/logout">
-                    <input type="submit" value="Logout">
-                </form>
-              <% } else {%>
-                  <p><a href="/register">Registe here</a> </p>
-                  <p><a href="/login">Login here</a> </p>
-              <% } %>
+            <p>Welcome, user: <%= email%>!</p>
+            <form method="POST" action="/logout">
+              <input type="submit" value="Logout">
+            </form>
+          <% } else {%>
+              <p><a href="/register">Registe here</a> </p>
+              <p><a href="/login">Login here</a> </p>
+          <% } %>
         </ul>
     </div>
 

@@ -10,7 +10,7 @@
     </header>
       <ul>
         <% for (shortURL in urls) { %>
-          <li> <%= shortURL %> &#8594; <%= urls[shortURL].longURL %>
+          <li> <%= shortURL %> &#8594; <a href="/u/<%=shortURL%>"> <%= urls[shortURL].longURL %></a>
             <a href="/urls/<%= shortURL%>">Edit</a>
             <form method="POST" action="/urls/<%= shortURL %>/delete">
             <input type="submit" value="Delete"></form></li>

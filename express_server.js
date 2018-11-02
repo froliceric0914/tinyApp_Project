@@ -42,11 +42,8 @@ const users = {
   }
 }
 
-/* find the email by the user_id
-function getUserEmail(user_id) {
-  return users[user_id].email;
-}
-*/
+// find the email by the user_id
+
 
 // comparing the userID with the logged-in user's ID.
 // which returns the subset of the URL database that belongs to the user with ID id
@@ -56,15 +53,12 @@ var urlsForUser = function (someUser) {
   for (shortURL in urlDatabase){
     if (someUser == urlDatabase[shortURL].userID){
       filtered[shortURL] = urlDatabase[shortURL];
-      //only filter the only one object
-    } else {
-      console.log("not found")
     }
   }
-  return filtered;
+  return filtered;//return outside the loop, so could grape all the url with the id
 }
 
-let result = urlsForUser("user_id1");
+
 
 function generateRamdomString () {
   var text = "";
@@ -79,71 +73,71 @@ app.get("/", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
+function getUserEmail(user_id) {
+  if(user_id){
+    if (users[user_id]) {
+      return users[user_id].email;
+    } else {
+      return "that user doesn't exist";
+    }
+  } else {
+    return "user_id1";
+  }
+}
+
+// let getUserEmail = (user_id) => users[user_id].email
+
+ // console.log(users['user_id1'].email);
+// console.log(getUserEmail('user_id1'))
 
 app.get("/urls", (req, res) => {
+  console.log(users);
   if (req.cookies['user_id']) {
     let fliteredDatabase = urlsForUser(req.cookies['user_id']);
+    let userEmail = getUserEmail(req.cookies["user_id"]);
     let templateVars = {urls: fliteredDatabase,
+                        email: userEmail,
                        // shortURL: urlDatabase[]
                        username: req.cookies["user_id"],
                        users: users};
     res.render("urls_index", templateVars);
   } else {
+    res.send('<p>Please log in first <a href="/login">Login here</a></p>')
     res.redirect(401, "/login");
   }
-
-
-  // let templateVars = { urls: urlDatabase,
-  //                      // shortURL: urlDatabase[]
-  //                      username: req.cookies["user_id"],
-  //                      users: users};
-    //display the useremail once login
-    // console.log(users)
-
 });
 
 app.post("/urls", (req, res) => {
   var shorteningURL = generateRamdomString();
-  // urlDatabase[newID] = req.body.longURL;
   urlDatabase[shorteningURL] = {longURL: req.body.longURL,
                                 userID: req.cookies["user_id"]}
-  // userID = {};
-  // userID[shortURL] = req.body.longURL;
-// console.log(shortURL);
-  // uerID: {shortURL: longURL}
-  //urlDatabase = {"userID": {shortURL: longURL} }
   res.redirect('/urls');
-  // res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/new", (req, res) => {
   if (req.cookies["user_id"]) {
-      let templateVars = {longURL: urlDatabase[req.params.id],
-                          username: req.cookies["user_id"],
-                          users: users}
+    let userEmail = getUserEmail(req.cookies["user_id"]);
+    let templateVars = {longURL: urlDatabase[req.params.id],
+                        email: userEmail,
+                        username: req.cookies["user_id"],
+                        users: users}
   res.render("urls_new", templateVars);
   } else {
-    res.redirect(401, '/login');
+    // res.redirect(401, '/login');
+    res.send('<p>whatever <a href="http://google.com">meep!</a></p>')
   }
 });
 
-
-
 app.get("/urls/:id", (req,res)=>{
   //if a URL for the given ID does not exist:
-//(Minor) returns HTML with a relevant error message
-//if user is not logged in:
-// returns HTML with a relevant error message
-// if user is logged it but does not own the URL with the given ID:
-// returns HTML with a relevant error message
-let templateVars = {shortURL: req.params.id,
+let userEmail = getUserEmail(req.cookies["user_id"]);
+
+  if(req.cookies['user_id'] === urlDatabase[req.params.id].userID) {
+    let templateVars = {shortURL: req.params.id,
                     longURL: urlDatabase[req.params.id].longURL,
+                    email: userEmail,
                     username: req.cookies["user_id"],
                     users: users}
-  if(req.cookies['user_id'] === urlDatabase[req.params.id].userID) {
     res.render("urls_show_updateURL", templateVars);
   } else {
     res.status(401).send("You don't have the access to this URL")
@@ -169,7 +163,6 @@ app.post("/urls/:id/delete", (req, res)=> {
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(`${longURL}`);
-  //the purposr og using this endpoint? shorteningURL part II
 });
 
 
@@ -187,23 +180,26 @@ app.post("/login", (req, res) =>{
   }
   else {
     let verifyID = false;
-    for (user in users) {
-      if (users[user].email === req.body.username
-        && users[user].password === req.body.password){
+    for (userID in users) {
+      // console.log (users)
+      // console.log(req.body.password)
+      // console.log(users[user].password)
+      if (users[userID].email === req.body.username
+      && bcrypt.compareSync(req.body.password, users[userID].password)){
         verifyID = true;
-        var userID = users[user].id; //try to replace the var later
+        res.cookie("user_id", userID);
         break;
       }
     }
     if (verifyID){
         // need to find the userID according to the email
-        res.cookie("user_id", userID);
         res.redirect('/urls');
     } else {
+      res.send('<p>Please register first <a href="/register">Register here</a></p>');
+
       res.redirect(403, '/register');
     }
   }
-  //need to react differently when name wrong or password wrong
 })
 
 app.post("/logout", (req, res)=>{
@@ -232,13 +228,16 @@ app.post("/register", (req, res)=>{
     }//avoid to send the res.redirect inside the interation;
     if(isUnique) {
       let newID = generateRamdomString();
+      let origPassword = req.body.password;
         users[newID] = {id: newID,
                         email: req.body.username,
-                        password: req.body.password};
+                        password: bcrypt.hashSync(origPassword, 10)};
+        console.log(users[newID]);
+        console.log(bcrypt.compareSync(req.body.password, users[newID].password));
         res.cookie("user_id", newID);
         res.redirect('/urls');
     } else {
-      res.status(400).send('User already exists, please directly log in');
+      res.redirect(400, '/login');
     }
   }
 });
