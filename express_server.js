@@ -168,11 +168,17 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  if (req.session.user_id === urlDatabase[req.params.id].userID) {
-    delete urlDatabase[req.params.id];
-    res.redirect("/urls");
+  if (!urlDatabase[req.params.id]) {
+    res.send(
+      '<p>Please <a href="/login"> log in</a> first </p></ br><p>Or <a href="/register">register</a> here</p>'
+    );
   } else {
-    res.status(401).send("You don't have the access to this URL");
+    if (req.session.user_id === urlDatabase[req.params.id].userID) {
+      delete urlDatabase[req.params.id];
+      res.redirect("/urls");
+    } else {
+      res.status(401).send("You don't have the access to this URL");
+    }
   }
 });
 

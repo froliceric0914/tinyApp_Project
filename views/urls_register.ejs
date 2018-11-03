@@ -1,14 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>TinyApp</title>
-  </head>
-  <body>
 
-    <form method="POST" action="/register">
-      Username: <br><input type="email" name="username"><br />Password:<br><input type="password" name="password"><br />
-      <input type="submit" value="Register">
-    </form>
+<head>
+  <title>TinyApp</title>
+</head>
 
-  </body>
+<body>
+  <header>
+    <% include ./partials/_header.ejs %>
+  </header>
+  <div style="display: flex; justify-content: center;align-items: center;">
+    <div>
+      <form method="POST" action="/register">
+        Username: <br><input type="email" name="username"><br />Password:<br><input type="password" name="password"><br />
+        <input type="submit" value="Register">
+      </form>
+    </div>
+  </div>
+
+
+</body>
+
 </html>
