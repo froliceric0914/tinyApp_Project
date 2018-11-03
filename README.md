@@ -4,8 +4,16 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
+    ### The main page of the website, which lists all the shortenURL-URL pairs
+
 ![Main Page](./docs/urls-page.png)
+
+    ### The Register page
+
 ![Register Page](./docs/urls-register.png)
+
+    ### The Edie page allows log-in user to edit the URL they create and update shortenURL-URL pair
+
 ![Shorten a new URL](./docs/urls-editURL.png)
 
 ## Dependencies
