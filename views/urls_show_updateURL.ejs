@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>TinyApp</title>
 
-  </head>
+<head>
+  <title>TinyApp</title>
 
-  <body>
-    <header>
-      <% include ./partials/_header.ejs %>
-    </header>
-      <div>
+</head>
 
-      <form action="/urls/<%=shortURL%>" method="POST" style="margin:150px;"><p><b>ShortURL: <%= shortURL %></b> </p>
+<body>
+  <header>
+    <% include ./partials/_header.ejs %>
+  </header>
+  <div>
+
+    <form action="/urls/<%=shortURL%>" method="POST" style="margin:150px;">
+      <p><b>ShortURL:
+          <%= shortURL %></b> </p>
       <label for="longURL">Enter a URL:</label>
       <input id="longURL" type="text" name="longURL" placeholder="<%=longURL%>" style="width: 300px">
       <input type="submit" value="Update">
     </form>
   </div>
-  </body>
+</body>
+
 </html>

@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>TinyApp</title>
-  </head>
-  <header> <% include ./partials/_header.ejs %> </header>
-    <!-- <% if (!username){ %> -->
-       <form method="POST" action="/login">
-           Username: <br><input type="email" name="username"><br />
-           Password:<br><input type="password" name="password"><br>
-          <input type="submit" value="Submit">
-      </form>
-    <!-- <% } else { %>
-      <form method="POST" action="/logout">
-          <input type="submit" value="Logout">
-      </form>
-    <% } %> -->
-  </body>
+
+<head>
+  <title>TinyApp</title>
+</head>
+<header>
+  <% include ./partials/_header.ejs %>
+</header>
+<form method="POST" action="/login">
+  Username: <br><input type="email" name="username"><br />
+  Password:<br><input type="password" name="password"><br>
+  <input type="submit" value="Submit">
+</form>
+</body>
+
 </html>

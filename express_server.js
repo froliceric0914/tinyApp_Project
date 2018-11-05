@@ -33,6 +33,7 @@ const users = {
   }
 };
 
+//filter the urlDatabase to exclusively show the shorten URL pairs with certain userID
 var urlsForUser = function(someUser) {
   let filtered = {};
   for (shortURL in urlDatabase) {
@@ -43,6 +44,7 @@ var urlsForUser = function(someUser) {
   return filtered;
 };
 
+//generate a six-digit random string as the shorten URL
 function generateRamdomString() {
   var text = "";
   var possible =
@@ -52,14 +54,7 @@ function generateRamdomString() {
   return text;
 }
 
-app.get("/", (req, res) => {
-  if (req.session.user_id) {
-    res.redirect("/urls");
-  } else {
-    res.redirect("/login");
-  }
-});
-
+// find the email of log-in user, according to the session cookie of user_id;
 function getUserEmail(user_id) {
   if (user_id) {
     if (users[user_id]) {
@@ -72,16 +67,22 @@ function getUserEmail(user_id) {
   }
 }
 
+app.get("/", (req, res) => {
+  if (req.session.user_id) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
+});
+
 app.get("/urls", (req, res) => {
   if (req.session.user_id) {
-    let fliteredDatabase = urlsForUser(req.session.user_id);
-    let userEmail = getUserEmail(req.session.user_id);
     let templateVars = {
-      urls: fliteredDatabase,
-      email: userEmail,
+      urls: urlsForUser(req.session.user_id),
+      email: getUserEmail(req.session.user_id),
       username: req.session.user_id,
       users: users
-    };
+    }; //pass all the variales that will be invoked in the EJS template
     res.render("urls_index", templateVars);
   } else {
     res.send(
@@ -97,7 +98,7 @@ app.post("/urls", (req, res) => {
       urlDatabase[shorteningURL] = {
         longURL: req.body.longURL,
         userID: req.session.user_id
-      };
+      }; //add the longURL and user_id which creates the shortened URL to the object of shoetened URL
       res.redirect("/urls");
     } else {
       res.send(
@@ -148,6 +149,7 @@ app.get("/urls/:id", (req, res) => {
   }
 });
 
+//edit the shortURL-longURL pair by updating a new long URL
 app.post("/urls/:id", (req, res) => {
   if (req.session.user_id) {
     if (req.body.longURL) {
@@ -182,6 +184,7 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
+//redirect to the website according to the long URL
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL].longURL;
   if (longURL) {
@@ -210,15 +213,16 @@ app.get("/login", (req, res) => {
   }
 });
 
+//allow user to log in by checking the email and password of user's; report errow message when input the wrong information
 app.post("/login", (req, res) => {
   if (!req.body.username || !req.body.password) {
     res.status(403).send("Please input your username/password");
   } else {
-    let verifyID = false;
+    let verifyID = false; //assign the veryfyID to be true only when inputs match both the password and username in user database
     for (userID in users) {
       if (
         users[userID].email === req.body.username &&
-        bcrypt.compareSync(req.body.password, users[userID].password)
+        bcrypt.compareSync(req.body.password, users[userID].password) //compare the hashed password and input password
       ) {
         verifyID = true;
         req.session.user_id = userID;
@@ -226,7 +230,7 @@ app.post("/login", (req, res) => {
       }
     }
     if (verifyID) {
-      res.redirect("/urls");
+      res.redirect("/urls"); //redirect to the main page when successfully logging in
     } else {
       res.send(
         '<p>Please register first <a href="/register">Register here</a></p>'
@@ -263,7 +267,7 @@ app.post("/register", (req, res) => {
     let isUnique = true;
     for (user in users) {
       if (users[user].email === req.body.username) {
-        isUnique = false;
+        isUnique = false; // assigned when the inout email already existed in the user database
         break;
       }
     }
@@ -274,10 +278,10 @@ app.post("/register", (req, res) => {
       users[newID] = {
         id: newID,
         email: req.body.username,
-        password: bcrypt.hashSync(origPassword, 10)
+        password: bcrypt.hashSync(origPassword, 10) //check the consistency of hashed password and input one when log-in
       };
       req.session.user_id = newID;
-      res.redirect("/urls");
+      res.redirect("/urls"); // redirect to the main page when registration succeeds
     } else {
       res.send(
         '<p> Seemingly you have already an account, please <a href="/login"> login</a></p>'
