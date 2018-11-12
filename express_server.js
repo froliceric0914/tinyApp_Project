@@ -2,8 +2,9 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-var cookieSession = require("cookie-session");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const helperFunction = require("./helperFunction.js");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
@@ -14,58 +15,6 @@ app.use(
     maxAge: 24 * 60 * 60 * 1000
   })
 );
-
-var urlDatabase = {
-  b2xVn2: { longURL: "http://www.lighthouselabs.ca", userID: "user_id1" },
-  "9sm5xK": { longURL: "http://www.google.com", userID: "user_id2" }
-};
-
-const users = {
-  userRandomID: {
-    id: "user1RandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-};
-
-//filter the urlDatabase to exclusively show the shorten URL pairs with certain userID
-var urlsForUser = function(someUser) {
-  let filtered = {};
-  for (shortURL in urlDatabase) {
-    if (someUser == urlDatabase[shortURL].userID) {
-      filtered[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return filtered;
-};
-
-//generate a six-digit random string as the shorten URL
-function generateRamdomString() {
-  var text = "";
-  var possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (var i = 0; i < 6; i++)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  return text;
-}
-
-// find the email of log-in user, according to the session cookie of user_id;
-function getUserEmail(user_id) {
-  if (user_id) {
-    if (users[user_id]) {
-      return users[user_id].email;
-    } else {
-      return "that user doesn't exist";
-    }
-  } else {
-    return "user_id1";
-  }
-}
 
 app.get("/", (req, res) => {
   if (req.session.user_id) {
@@ -78,10 +27,10 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   if (req.session.user_id) {
     let templateVars = {
-      urls: urlsForUser(req.session.user_id),
-      email: getUserEmail(req.session.user_id),
+      urls: helperFunction.urlsForUser(req.session.user_id),
+      email: helperFunction.getUserEmail(req.session.user_id),
       username: req.session.user_id,
-      users: users
+      users: helperFunction.users
     }; //pass all the variales that will be invoked in the EJS template
     res.render("urls_index", templateVars);
   } else {
@@ -94,8 +43,8 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   if (req.session.user_id) {
     if (req.body.longURL) {
-      var shorteningURL = generateRamdomString();
-      urlDatabase[shorteningURL] = {
+      var shorteningURL = helperFunction.generateRamdomString();
+      helperFunction.urlDatabase[shorteningURL] = {
         longURL: req.body.longURL,
         userID: req.session.user_id
       }; //add the longURL and user_id which creates the shortened URL to the object of shoetened URL
@@ -115,10 +64,10 @@ app.post("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   if (req.session.user_id) {
     let templateVars = {
-      longURL: urlDatabase[req.params.id],
-      email: getUserEmail(req.session.user_id),
+      longURL: helperFunction.urlDatabase[req.params.id],
+      email: helperFunction.getUserEmail(req.session.user_id),
       username: req.session.user_id,
-      users: users
+      users: helperFunction.users
     };
     res.render("urls_new", templateVars);
   } else {
@@ -129,18 +78,20 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  if (!urlDatabase[req.params.id]) {
+  if (!helperFunction.urlDatabase[req.params.id]) {
     res.send(
       '<p>Please <a href="/login"> log in</a> first </p></ br><p>Or <a href="/register">register</a> here</p>'
     );
   } else {
-    if (req.session.user_id === urlDatabase[req.params.id].userID) {
+    if (
+      req.session.user_id === helperFunction.urlDatabase[req.params.id].userID
+    ) {
       let templateVars = {
         shortURL: req.params.id,
-        longURL: urlDatabase[req.params.id].longURL,
-        email: getUserEmail(req.session.user_id),
+        longURL: helperFunction.urlDatabase[req.params.id].longURL,
+        email: helperFunction.getUserEmail(req.session.user_id),
         username: req.session.user_id,
-        users: users
+        users: helperFunction.users
       };
       res.render("urls_show_updateURL", templateVars);
     } else {
@@ -153,7 +104,7 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   if (req.session.user_id) {
     if (req.body.longURL) {
-      urlDatabase[req.params.id].longURL = req.body.longURL;
+      helperFunction.urlDatabase[req.params.id].longURL = req.body.longURL;
       res.redirect("/urls");
     } else {
       res.send(
@@ -170,13 +121,15 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  if (!urlDatabase[req.params.id]) {
+  if (!helperFunction.urlDatabase[req.params.id]) {
     res.send(
       '<p>Please <a href="/login"> log in</a> first </p></ br><p>Or <a href="/register">register</a> here</p>'
     );
   } else {
-    if (req.session.user_id === urlDatabase[req.params.id].userID) {
-      delete urlDatabase[req.params.id];
+    if (
+      req.session.user_id === helperFunction.urlDatabase[req.params.id].userID
+    ) {
+      delete helperFunction.urlDatabase[req.params.id];
       res.redirect("/urls");
     } else {
       res.status(401).send("You don't have the access to this URL");
@@ -186,7 +139,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //redirect to the website according to the long URL
 app.get("/u/:shortURL", (req, res) => {
-  let longURL = urlDatabase[req.params.shortURL].longURL;
+  let longURL = helperFunction.urlDatabase[req.params.shortURL].longURL;
   if (longURL) {
     res.redirect(`${longURL}`);
   } else {
@@ -204,10 +157,10 @@ app.get("/login", (req, res) => {
   } else {
     let templateVars = {
       shortURL: req.params.id,
-      longURL: urlDatabase[req.params.id],
+      longURL: helperFunction.urlDatabase[req.params.id],
       username: req.session.user_id,
-      email: getUserEmail(req.session.user_id),
-      users: users
+      email: helperFunction.getUserEmail(req.session.user_id),
+      users: helperFunction.users
     };
     res.render("urls_login", templateVars);
   }
@@ -219,10 +172,13 @@ app.post("/login", (req, res) => {
     res.status(403).send("Please input your username/password");
   } else {
     let verifyID = false; //assign the veryfyID to be true only when inputs match both the password and username in user database
-    for (userID in users) {
+    for (userID in helperFunction.users) {
       if (
-        users[userID].email === req.body.username &&
-        bcrypt.compareSync(req.body.password, users[userID].password) //compare the hashed password and input password
+        helperFunction.users[userID].email === req.body.username &&
+        bcrypt.compareSync(
+          req.body.password,
+          helperFunction.users[userID].password
+        ) //compare the hashed password and input password
       ) {
         verifyID = true;
         req.session.user_id = userID;
@@ -250,9 +206,9 @@ app.get("/register", (req, res) => {
   } else {
     let templateVars = {
       shortURL: req.params.id,
-      longURL: urlDatabase[req.params.id],
+      longURL: helperFunction.urlDatabase[req.params.id],
       username: req.session.user_id,
-      users: users
+      users: helperFunction.users
     };
     res.render("urls_register", templateVars);
   }
@@ -265,17 +221,17 @@ app.post("/register", (req, res) => {
     );
   } else {
     let isUnique = true;
-    for (user in users) {
-      if (users[user].email === req.body.username) {
+    for (user in helperFunction.users) {
+      if (helperFunction.users[user].email === req.body.username) {
         isUnique = false; // assigned when the inout email already existed in the user database
         break;
       }
     }
 
     if (isUnique) {
-      let newID = generateRamdomString();
+      let newID = helperFunction.generateRamdomString();
       let origPassword = req.body.password;
-      users[newID] = {
+      helperFunction.users[newID] = {
         id: newID,
         email: req.body.username,
         password: bcrypt.hashSync(origPassword, 10) //check the consistency of hashed password and input one when log-in
